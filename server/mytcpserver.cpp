@@ -24,31 +24,36 @@ MyTcpServer::MyTcpServer(QObject *parent) : QObject(parent){
 
 void MyTcpServer::slotNewConnection(){
  //   if(server_status==1){
-        mTcpSocket = mTcpServer->nextPendingConnection();
-        mTcpSocket->write("Hello, World!!! I am echo server!\r\n");
-        connect(mTcpSocket, &QTcpSocket::readyRead,this,&MyTcpServer::slotServerRead);
-        connect(mTcpSocket,&QTcpSocket::disconnected,this,&MyTcpServer::slotClientDisconnected);
+        QTcpSocket* val_socket;
+        val_socket = mTcpServer->nextPendingConnection();
+        val_socket->write("Hello, World!!! I am echo server!\r\n");
+        connect(val_socket, &QTcpSocket::readyRead,this,&MyTcpServer::slotServerRead);
+        connect(val_socket, &QTcpSocket::disconnected,this,&MyTcpServer::slotClientDisconnected);
+        mTcpSocket.insert(val_socket->socketDescriptor(),val_socket);
    // }
 }
 
 void MyTcpServer::slotServerRead(){
     QString res = "";
-    while(mTcpSocket->bytesAvailable()>0)
+    QTcpSocket* val_socket = mTcpSocket[((QTcpSocket*)sender())->socketDescriptor()];
+    while(val_socket->bytesAvailable()>0)
     {
-        QByteArray array =mTcpSocket->readAll();
+        QByteArray array =val_socket->readAll();
         qDebug()<<array<<"\n";
         if(array=="\x01")
         {
-            mTcpSocket->write(parse(res.toUtf8()));
+            val_socket->write(parse(res.toUtf8()));
             res = "";
         }
         else
             res.append(array);
     }
 
-    mTcpSocket->write(parse(res.toUtf8()));
+    val_socket->write(parse(res.toUtf8()));
 }
 
 void MyTcpServer::slotClientDisconnected(){
-    mTcpSocket->close();
+    int key = ((QTcpSocket*)sender())->socketDescriptor();
+    mTcpSocket[key]->close();
+    mTcpSocket.remove(key);
 }
