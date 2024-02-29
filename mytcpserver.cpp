@@ -4,6 +4,11 @@
 MyTcpServer::~MyTcpServer()
 {
 
+    while(!mTcpSocket.empty())
+    {
+        mTcpSocket.begin().value()->close();
+        mTcpSocket.remove(mTcpSocket.begin().key());
+    }
     mTcpServer->close();
     //server_status=0;
 }
@@ -35,7 +40,7 @@ void MyTcpServer::slotNewConnection(){
 
 void MyTcpServer::slotServerRead(){
     QString res = "";
-    QTcpSocket* val_socket = mTcpSocket[((QTcpSocket*)sender())->socketDescriptor()];
+    QTcpSocket* val_socket = (QTcpSocket*)sender();//mTcpSocket[((QTcpSocket*)sender())->socketDescriptor()];
     while(val_socket->bytesAvailable()>0)
     {
         QByteArray array =val_socket->readAll();
